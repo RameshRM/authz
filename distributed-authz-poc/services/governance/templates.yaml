@@ -1,0 +1,13 @@
+roleTemplates:
+  - templateId: foo-secret
+    description: Grants access to view all secrets under an Application or Jira
+    ketoRelation: secret_admins
+    ldapGroupCn: foo-secret
+
+policyTemplates:
+  - templateId: pbac-foo-to-bar
+    description: Policy-based access granting Foo access to all APIs in Bar
+    sourceApp: app-foo
+    targetApp: app-bar
+    grantedScope: bar:all
+    allowAllEndpoints: true

@@ -1,0 +1,34 @@
+serve:
+  proxy:
+    host: 0.0.0.0
+    port: 4455
+
+access_rules:
+  repositories:
+    - file:///etc/config/oathkeeper/access-rules.yaml
+
+authenticators:
+  jwt:
+    enabled: true
+    config:
+      jwks_urls:
+        - http://mock-oidc:4000/.well-known/jwks.json
+
+authorizers:
+  allow:
+    enabled: true
+  remote_json:
+    enabled: true
+    config:
+      remote: http://keto:4466/relation-tuples/check
+      forward_response_headers_to_upstream: []
+
+mutators:
+  header:
+    enabled: true
+  noop:
+    enabled: true
+
+errors:
+  fallback:
+    - json

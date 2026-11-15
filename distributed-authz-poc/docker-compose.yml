@@ -1,0 +1,103 @@
+services:
+  mock-oidc:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - ./services/mock-oidc:/app
+    command: node server.js
+    ports:
+      - "4000:4000"
+
+  mock-odb:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - ./services/mock-odb:/app
+    command: node server.js
+    ports:
+      - "4001:4001"
+
+  openldap:
+    image: osixia/openldap:1.5.0
+    environment:
+      - LDAP_ORGANISATION=Internal Corp
+      - LDAP_DOMAIN=internal.local
+      - LDAP_ADMIN_PASSWORD=admin
+    ports:
+      - "389:389"
+
+  governance:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - ./services/governance:/app
+    environment:
+      - ODB_URL=http://mock-odb:4001
+      - KETO_WRITE_URL=http://keto:4467
+      - LDAP_HOST=openldap
+      - LDAP_PORT=389
+      - LDAP_BASE_DN=dc=internal,dc=local
+      - LDAP_ADMIN_DN=cn=admin,dc=internal,dc=local
+      - LDAP_ADMIN_PASSWORD=admin
+    command: node server.js
+    ports:
+      - "4002:4002"
+    depends_on:
+      - mock-odb
+      - keto
+      - openldap
+
+  keto-migrate:
+    image: oryd/keto:v0.13.0-alpha.0
+    volumes:
+      - ./ory/keto:/etc/config/keto
+      - keto-data:/var/lib/sqlite
+    command: migrate up -y --config /etc/config/keto/keto.yml
+
+  keto:
+    image: oryd/keto:v0.13.0-alpha.0
+    volumes:
+      - ./ory/keto:/etc/config/keto
+      - keto-data:/var/lib/sqlite
+    command: serve --config /etc/config/keto/keto.yml
+    ports:
+      - "4466:4466"
+      - "4467:4467"
+    depends_on:
+      - keto-migrate
+
+  oathkeeper:
+    image: oryd/oathkeeper:v0.40.8
+    volumes:
+      - ./ory/oathkeeper:/etc/config/oathkeeper
+    command: serve --config /etc/config/oathkeeper/oathkeeper.yml
+    ports:
+      - "4455:4455"
+    depends_on:
+      - mock-oidc
+      - keto
+
+  app-foo:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - ./services/app-foo:/app
+    environment:
+      - OIDC_URL=http://mock-oidc:4000
+      - GATEWAY_URL=http://oathkeeper:4455
+      - ODB_URL=http://mock-odb:4001
+    command: node server.js
+    ports:
+      - "4003:4003"
+
+  api-bar:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - ./services/api-bar:/app
+    command: node server.js
+    ports:
+      - "4004:4004"
+
+volumes:
+  keto-data:

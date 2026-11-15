@@ -1,0 +1,19 @@
+jiras:
+  - jiraId: JIRA-100
+    name: Core Payments Platform
+
+applications:
+  - resourceId: app-foo
+    label: Foo User Portal
+    stackId: stack-frontend-01
+    jiraId: JIRA-100
+    secrets:
+      STRIPE_KEY: sk_live_foo_998877
+      DB_PASS: super_secret_foo_pass
+
+  - resourceId: app-bar
+    label: Bar Core API
+    stackId: stack-backend-01
+    jiraId: JIRA-100
+    secrets:
+      INTERNAL_SIGNING_KEY: bar_key_112233
